@@ -1,25 +1,26 @@
 import time
+import uuid
 from typing import Generator
 
 from job import Job, coroutine
 from scheduler import Scheduler
-from utils import file_system_operations, file_operations, network_operations
+
 
 @coroutine
 def print_x(num: int, name: str) -> Generator[None, None, None]:
     for i in range(num):
         yield
-        print(f'Вызов функции print_x с именем {name}')
+        time.sleep(1)
+        print(f"Вызов функции print_x с именем {name}")
 
-if __name__ == '__main__':
-    job1 = Job(target=print_x, args=(2, 'Два'))
-    job2 = Job(target=print_x, args=(3, 'Три'))
-    job3 = Job(target=print_x, args=(4, 'Четыре'))
+
+if __name__ == "__main__":
+    job1 = Job(func=print_x, job_id=uuid.uuid4(), args=(1, "Один"))
+    job2 = Job(func=print_x, job_id=uuid.uuid4(), args=(2, "Два"))
+    job3 = Job(func=print_x, job_id=uuid.uuid4(), args=(3, "Три"), dependencies=[job1, job2])
 
     loop = Scheduler()
-    loop.add_job(job1)
-    loop.add_job(job2)
-    loop.add_job(job3)
+    loop.schedule(job1)
+    loop.schedule(job2)
+    loop.schedule(job3)
     loop.run()
-
-

@@ -1,6 +1,6 @@
 from config.config import settings
 
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = "%(asctime)s - %(name)s -  - [%(filename)s:%(lineno)d] - %(levelname)s - %(message)s"
 LOG_DEFAULT_HANDLERS = ["console", "file"]  # Added "file" here
 
 LOGGING = {
