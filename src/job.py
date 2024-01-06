@@ -2,7 +2,7 @@ import time
 import json
 import logging.config
 from enum import Enum, auto
-from typing import Optional
+from typing import Callable, Any, Sequence, Optional, Dict
 
 from config.logger import LOGGING
 
@@ -29,38 +29,35 @@ SERIALIZABLE_FIELDS = {
 }
 
 
-class JobRegistry:
-    def __init__(self):
-        self.jobs = {}
-
-    def get_job(self, job_id):
-        return self.jobs.get(job_id)
-
-    def register_job(self, job):
-        self.jobs[job.job_id] = job
-
-
 class Job:
     def __init__(
-        self, func, job_id, args=None, kwargs=None, start_at=None, max_working_time=-1, max_tries=1, dependencies=[]
+        self,
+        func: Callable,
+        job_id: str,
+        args: Optional[Sequence[Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        start_at: Optional[float] = None,
+        max_working_time: int = -1,
+        max_tries: int = 1,
+        dependencies: Optional[Sequence["Job"]] = None,
     ):
         self.func = func
         self.job_id = job_id
-        self.args = args or ()
-        self.kwargs = kwargs or {}
+        self.args = args if args is not None else ()
+        self.kwargs = kwargs if kwargs is not None else {}
         self.coroutine_factory = lambda: func(*self.args, **self.kwargs)
-        self.start_at = start_at if start_at else time.time()
+        self.start_at = start_at if start_at is not None else time.time()
         self.max_working_time = max_working_time
         self.start_time = time.time()
         self.max_tries = max_tries
         self.current_tries = 0
-        self.dependencies = dependencies
-        self.status: JobStatus = JobStatus.PENDING
+        self.dependencies = dependencies if dependencies is not None else []
+        self.status = JobStatus.PENDING
         self.result = None
         self.error = None
         self.__coroutine = None
 
-    def update_status(self, new_status: JobStatus, result: Optional[str] = None, error: Optional[str] = None):
+    def update_status(self, new_status: JobStatus, result: Optional[str] = None, error: Optional[str] = None) -> None:
         self.status = new_status
         self.result = result
         self.error = error
@@ -92,11 +89,11 @@ class Job:
             return False
         return (time.time() - self.start_time) > self.max_working_time
 
-    def restart_coroutine(self):
+    def restart_coroutine(self) -> None:
         logger.info("Job %s re-start", self.job_id)
         self.__coroutine = None
 
-    def close_coroutine(self):
+    def close_coroutine(self) -> None:
         if self.__coroutine:
             logger.info("Closing coroutine for Job %s", self.job_id)
             self.__coroutine.close()
@@ -114,7 +111,7 @@ class Job:
     def has_failed_dependency(self) -> bool:
         return any(job.status == JobStatus.FAILED for job in self.dependencies)
 
-    def serialize(self):
+    def serialize(self) -> str:
         data = {}
         for field in SERIALIZABLE_FIELDS:
             if hasattr(self, field):
@@ -134,7 +131,9 @@ class Job:
         return json.dumps(data)
 
     @staticmethod
-    def create_from_data(data, func_resolver, job_registry):
+    def create_from_data(
+        data: Dict[str, Any], func_resolver: Callable[[str], Callable], job_registry: "JobRegistry"
+    ) -> "Job":
         job_id = data["job_id"]
         existing_job = job_registry.get_job(job_id)
         if existing_job:
@@ -167,7 +166,19 @@ class Job:
         return job
 
     @staticmethod
-    def deserialize(serialized_str, func_resolver, job_registry):
+    def deserialize(
+        serialized_str: str, func_resolver: Callable[[str], Callable], job_registry: "JobRegistry"
+    ) -> "Job":
         data = json.loads(serialized_str)
-        print(data)
         return Job.create_from_data(data, func_resolver, job_registry)
+
+
+class JobRegistry:
+    def __init__(self) -> None:
+        self.jobs: Dict[str, Job] = {}
+
+    def get_job(self, job_id: str) -> Optional[Job]:
+        return self.jobs.get(job_id)
+
+    def register_job(self, job: Job) -> None:
+        self.jobs[job.job_id] = job

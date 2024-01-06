@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, pool_size: int = 10, state_file="scheduler_state.json") -> None:
+    def __init__(self, pool_size: int = 10, state_file: str = "scheduler_state.json") -> None:
         self._pool_size: int = pool_size
         self.job_queue: Deque[Job] = deque()
         self.state_file = state_file
@@ -68,7 +68,7 @@ class Scheduler:
                 if job.status != JobStatus.FAILED and job.status != JobStatus.COMPLETED:
                     self.add_job(job)
 
-    def load_jobs(self):
+    def load_jobs(self) -> None:
         job_registry = JobRegistry()
         if os.path.exists(self.state_file):
             with open(self.state_file, "r") as file:
@@ -76,17 +76,17 @@ class Scheduler:
                 for sj in serialized_jobs:
                     self.add_job(Job.deserialize(sj, func_resolver, job_registry))
 
-    def save_jobs(self):
+    def save_jobs(self) -> None:
         with open(self.state_file, "w") as file:
             serialized_jobs = [job.serialize() for job in self.job_queue]
             json.dump(serialized_jobs, file)
 
-    def restart(self):
+    def restart(self) -> None:
         self.stop()
         self.job_queue.clear()
         self.load_jobs()
         self.run()
 
-    def stop(self):
+    def stop(self) -> None:
         logger.info("Stopping event loop and saving not finished jobs")
         self.save_jobs()
