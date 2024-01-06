@@ -1,0 +1,24 @@
+jobs:
+  - id: create_news_directory
+    function: create_directory
+    args: [output_news_folder]
+  
+  - id: create_news_file_trump
+    function: create_file
+    args: [output_news_folder/yahoo_news_trump.txt]
+    dependencies: [create_news_directory]
+  
+  - id: fetch_news_content
+    function: html_to_txt_pipeline
+    args: ["https://news.yahoo.com/trump-legal-news-brief-supreme-court-agrees-to-quickly-decide-whether-trump-can-be-kept-off-ballots-223044557.html", "output_news_folder/yahoo_news_trump.txt"]
+    dependencies: [create_news_file_trump]
+
+  - id: create_news_file_harvard
+    function: create_file
+    args: [output_news_folder/yahoo_news_harvard.txt]
+    dependencies: [create_news_directory]
+  
+  - id: fetch_additional_news_content
+    function: html_to_txt_pipeline
+    args: ["https://news.yahoo.com/harvards-claudine-gay-cited-racial-animus-in-her-resignation-letter-but-experts-see-a-bigger-attack-on-dei-191910034.html", "output_news_folder/yahoo_news_harvard.txt"]
+    dependencies: [create_news_file_harvard]

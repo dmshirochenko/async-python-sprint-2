@@ -2,13 +2,39 @@ import os
 import shutil
 import requests
 import logging.config
+from functools import wraps
 from html.parser import HTMLParser
 
 from config.logger import LOGGING
-from job import coroutine
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
+
+
+def coroutine(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        gen = f(*args, **kwargs)
+        gen.send(None)
+        return gen
+
+    return wrap
+
+
+def func_resolver(func_name):
+    operations_mapping = {
+        'create_directory': FileSystemOperations.create_directory,
+        'delete_directory': FileSystemOperations.delete_directory,
+        'create_file': FileSystemOperations.create_file,
+        'delete_file': FileSystemOperations.delete_file,
+        'write_to_file': FileOperations.write_to_file,
+        'read_from_file': FileOperations.read_from_file,
+        'html_to_txt_pipeline': NetworkOperationsPipe.html_to_txt_pipeline,
+        'write_to_file_pipeline': NetworkOperationsPipe.write_to_file,
+        'clean_html_chunks': NetworkOperationsPipe.clean_html_chunks,
+    }
+
+    return operations_mapping.get(func_name)
 
 
 class FileSystemOperations:

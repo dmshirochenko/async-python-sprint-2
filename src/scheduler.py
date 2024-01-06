@@ -1,19 +1,25 @@
+import os
+import json
+
 from collections import deque
 from typing import Deque
 
 import logging.config
 
 from config.logger import LOGGING
-from job import Job, JobStatus
+from src.job import Job, JobStatus, JobRegistry
+from src.utils import func_resolver
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, pool_size: int = 10) -> None:
+    def __init__(self, pool_size: int = 10, state_file="scheduler_state.json") -> None:
         self._pool_size: int = pool_size
         self.job_queue: Deque[Job] = deque()
+        self.state_file = state_file
+        self.running = False
 
     def schedule(self, job: Job) -> None:
         logger.info("Job scheduling ...")
@@ -34,11 +40,13 @@ class Scheduler:
             if job.has_exceeded_max_time():
                 job.update_status(JobStatus.FAILED, error="Max working time exceeded")
                 logger.error("Job %s: Max working time exceeded", job.job_id)
+                job.close_coroutine()
                 continue
 
             if job.has_failed_dependency():
                 logger.error("Cannot run job %s: Dependency failed", job.job_id)
                 job.update_status(JobStatus.FAILED, error="Dependency failed")
+                job.close_coroutine()
                 continue
 
             try:
@@ -57,5 +65,28 @@ class Scheduler:
                     logger.error("Job %s: Max retry exceeded", job.job_id)
                     job.update_status(JobStatus.FAILED, error=str(e))
             else:
-                if job.status != JobStatus.FAILED:
+                if job.status != JobStatus.FAILED and job.status != JobStatus.COMPLETED:
                     self.add_job(job)
+
+    def load_jobs(self):
+        job_registry = JobRegistry()
+        if os.path.exists(self.state_file):
+            with open(self.state_file, "r") as file:
+                serialized_jobs = json.load(file)
+                for sj in serialized_jobs:
+                    self.add_job(Job.deserialize(sj, func_resolver, job_registry))
+
+    def save_jobs(self):
+        with open(self.state_file, "w") as file:
+            serialized_jobs = [job.serialize() for job in self.job_queue]
+            json.dump(serialized_jobs, file)
+
+    def restart(self):
+        self.stop()
+        self.job_queue.clear()
+        self.load_jobs()
+        self.run()
+
+    def stop(self):
+        logger.info("Stopping event loop and saving not finished jobs")
+        self.save_jobs()
