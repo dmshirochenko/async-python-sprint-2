@@ -1,3 +1,39 @@
+# Async Python Sprint 2 Project
+
+## Project Structure
+
+Here is the overall structure of the project:
+
+-config/ # Configuration files for the project
+    -  config.py # General configurations
+    -  logger.py # Logger configurations
+- src/ # Source code for the main application
+    -  job.py # Defines the Job class
+    -  scheduler.py # Defines the Scheduler class
+    -  task_manager.py # Task manager for handling jobs
+    -  utils.py # Utility functions used across the project
+- tests/ # Automated tests for the project
+    -  conftest.py # Test configuration and fixtures
+    -  test_job_scheduler.py # Test suite for the Job and Scheduler classes
+- .env_example # Example environment configuration
+- main.py # Main executable script for the project
+- README.md # README file with project details
+- requirements.txt # List of dependencies to install
+
+## Running the Application
+
+To run the application, follow these steps:
+
+1. Ensure you have Python 3.x installed on your system.
+2. Set up a virtual environment and activate it:
+    python3 -m venv .venv
+    source .venv/bin/activate # On Windows use .venv\Scripts\activate
+3. Install the required dependencies:
+    pip install -r requirements.txt
+4. Update 'job_schedule_example.yaml' with jobs needed
+5. Run the `main.py` script:
+    python main.py
+    
 # Проектное задание второго спринта
 
 Спроектировать и реализовать планировщик задач для выполнения поступающих задач.
