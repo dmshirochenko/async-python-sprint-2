@@ -4,7 +4,7 @@
 
 Here is the overall structure of the project:
 
--config/ # Configuration files for the project
+- config/ # Configuration files for the project
     -  config.py # General configurations
     -  logger.py # Logger configurations
 - src/ # Source code for the main application
@@ -33,7 +33,7 @@ To run the application, follow these steps:
 4. Update 'job_schedule_example.yaml' with jobs needed
 5. Run the `main.py` script:
     python main.py
-    
+
 # Проектное задание второго спринта
 
 Спроектировать и реализовать планировщик задач для выполнения поступающих задач.
