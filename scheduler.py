@@ -30,6 +30,17 @@ class Scheduler:
     def run(self) -> None:
         while self.job_queue:
             job = self.job_queue.popleft()
+
+            if job.has_exceeded_max_time():
+                job.update_status(JobStatus.FAILED, error="Max working time exceeded")
+                logger.error("Job %s: Max working time exceeded", job.job_id)
+                continue
+
+            if job.has_failed_dependency():
+                logger.error("Cannot run job %s: Dependency failed", job.job_id)
+                job.update_status(JobStatus.FAILED, error="Dependency failed")
+                continue
+
             try:
                 job.run()
             except StopIteration:
@@ -43,6 +54,7 @@ class Scheduler:
                     job.current_tries += 1
                     self.add_job(job)  # Re-add the job to the queue for a retry
                 else:
+                    logger.error("Job %s: Max retry exceeded", job.job_id)
                     job.update_status(JobStatus.FAILED, error=str(e))
             else:
                 if job.status != JobStatus.FAILED:

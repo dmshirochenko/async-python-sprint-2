@@ -38,6 +38,7 @@ class Job:
         self.coroutine_factory = lambda: func(*self.__args, **self.__kwargs)
         self.start_at = start_at if start_at else time.time()
         self.max_working_time = max_working_time
+        self.start_time = time.time()
         self.max_tries = max_tries
         self.current_tries = 0
         self.dependencies = dependencies
@@ -59,6 +60,7 @@ class Job:
 
         if not self.is_runnable():
             return
+
         self.update_status(JobStatus.RUNNING)
 
         if self.__coroutine is None:
@@ -70,6 +72,11 @@ class Job:
             raise
         except Exception as e:
             raise e
+
+    def has_exceeded_max_time(self) -> bool:
+        if self.max_working_time == -1:
+            return False
+        return (time.time() - self.start_time) > self.max_working_time
 
     def restart_coroutine(self):
         logger.info("Job %s re-start", self.job_id)
@@ -85,3 +92,6 @@ class Job:
         if time.time() < self.start_at:
             return False
         return all(job.status == JobStatus.COMPLETED for job in self.dependencies)
+
+    def has_failed_dependency(self) -> bool:
+        return any(job.status == JobStatus.FAILED for job in self.dependencies)

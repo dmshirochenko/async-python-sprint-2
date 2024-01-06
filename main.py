@@ -10,6 +10,8 @@ from utils import FileSystemOperations, NetworkOperationsPipe
 
 @coroutine
 def print_x(num: int, name: str) -> Generator[None, None, None]:
+    if name == "Two":
+        time.sleep(2)
     for i in range(num):
         yield
         time.sleep(0.1)
@@ -17,6 +19,17 @@ def print_x(num: int, name: str) -> Generator[None, None, None]:
 
 
 if __name__ == "__main__":
+    """
+    job1 = Job(func=print_x, job_id=uuid.uuid4(), args=[1, "One"])
+    job2 = Job(func=print_x, job_id=uuid.uuid4(), args=[2, "Two"], max_working_time=2)
+    job3 = Job(func=print_x, job_id=uuid.uuid4(), args=[3, "Three"], dependencies=[job1, job2])
+
+    loop = Scheduler()
+    loop.schedule(job1)
+    loop.schedule(job2)
+    loop.schedule(job3)
+    loop.run()
+    """
     dir_name = "output_news_folder"
     file_name = "yahoo_news.txt"
     link = (
