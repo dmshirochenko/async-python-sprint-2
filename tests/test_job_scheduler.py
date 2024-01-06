@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
-from job import Job, JobStatus
-from scheduler import Scheduler
+from src.job import Job, JobStatus
+from src.scheduler import Scheduler
 
 # Fixtures for reusable objects
 @pytest.fixture

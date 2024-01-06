@@ -5,6 +5,7 @@ creds.ini
 .idea/
 *.csv
 *.pkl
+scheduler_state.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
