@@ -4,6 +4,7 @@ import requests
 import logging.config
 from functools import wraps
 from html.parser import HTMLParser
+from typing import Generator, Any, Callable
 
 from config.logger import LOGGING
 
@@ -11,36 +12,35 @@ logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
 
 
-def coroutine(f):
+def coroutine(f: Callable) -> Callable:
     @wraps(f)
-    def wrap(*args, **kwargs):
+    def wrap(*args: Any, **kwargs: Any) -> Generator:
         gen = f(*args, **kwargs)
-        gen.send(None)
+        next(gen)  # start the generator
         return gen
 
     return wrap
 
 
-def func_resolver(func_name):
+def func_resolver(func_name: str) -> Any:
     operations_mapping = {
-        'create_directory': FileSystemOperations.create_directory,
-        'delete_directory': FileSystemOperations.delete_directory,
-        'create_file': FileSystemOperations.create_file,
-        'delete_file': FileSystemOperations.delete_file,
-        'write_to_file': FileOperations.write_to_file,
-        'read_from_file': FileOperations.read_from_file,
-        'html_to_txt_pipeline': NetworkOperationsPipe.html_to_txt_pipeline,
-        'write_to_file_pipeline': NetworkOperationsPipe.write_to_file,
-        'clean_html_chunks': NetworkOperationsPipe.clean_html_chunks,
+        "create_directory": FileSystemOperations.create_directory,
+        "delete_directory": FileSystemOperations.delete_directory,
+        "create_file": FileSystemOperations.create_file,
+        "delete_file": FileSystemOperations.delete_file,
+        "write_to_file": FileOperations.write_to_file,
+        "read_from_file": FileOperations.read_from_file,
+        "html_to_txt_pipeline": NetworkOperationsPipe.html_to_txt_pipeline,
+        "write_to_file_pipeline": NetworkOperationsPipe.write_to_file,
+        "clean_html_chunks": NetworkOperationsPipe.clean_html_chunks,
     }
-
     return operations_mapping.get(func_name)
 
 
 class FileSystemOperations:
     @staticmethod
     @coroutine
-    def create_directory(path):
+    def create_directory(path: str) -> Generator:
         try:
             os.makedirs(path)
             yield f"Directory created at {path}"
@@ -49,7 +49,7 @@ class FileSystemOperations:
 
     @staticmethod
     @coroutine
-    def delete_directory(path):
+    def delete_directory(path: str) -> Generator:
         try:
             shutil.rmtree(path)
             yield f"Directory deleted at {path}"
@@ -58,7 +58,7 @@ class FileSystemOperations:
 
     @staticmethod
     @coroutine
-    def create_file(path):
+    def create_file(path: str) -> Generator:
         try:
             with open(path, "w") as file:
                 file.write("")
@@ -68,7 +68,7 @@ class FileSystemOperations:
 
     @staticmethod
     @coroutine
-    def delete_file(path):
+    def delete_file(path: str) -> Generator:
         try:
             os.remove(path)
             yield f"File deleted at {path}"
@@ -79,14 +79,18 @@ class FileSystemOperations:
 class FileOperations:
     @staticmethod
     @coroutine
-    def write_to_file(path, content):
-        with open(path, "w") as file:
-            file.write(content)
-        yield f"Content written to {path}"
+    def write_to_file(path: str, content: str) -> Generator:
+        try:
+            with open(path, "w") as file:
+                file.write(content)
+            yield f"Content written to {path}"
+        except IOError as e:
+            logger.error("IOError while writing to file %s: %s", path, e)
+            raise e
 
     @staticmethod
     @coroutine
-    def read_from_file(path):
+    def read_from_file(path: str) -> Generator:
         try:
             with open(path, "r") as file:
                 for line in file:
@@ -126,7 +130,7 @@ class ChunkHTMLParser(HTMLParser):
 class NetworkOperationsPipe:
     @staticmethod
     @coroutine
-    def html_to_txt_pipeline(url, path):
+    def html_to_txt_pipeline(url: str, path: str) -> Generator:
         output = NetworkOperationsPipe().clean_html_chunks()
         output.send(path)
         try:
@@ -136,11 +140,12 @@ class NetworkOperationsPipe:
                 if chunk:
                     yield output.send(chunk.decode("utf-8"))
         except requests.exceptions.RequestException as e:
+            logger.error("RequestException while fetching %s: %s", url, e)
             raise e
 
     @staticmethod
     @coroutine
-    def write_to_file():
+    def write_to_file() -> Generator:
         path = yield
         try:
             with open(path, "w") as file:
@@ -149,14 +154,14 @@ class NetworkOperationsPipe:
                     file.write(chunk)
                     file.flush()
         except IOError as e:
-            logger.error(f"IOError while writing to file {path}: {e}")
+            logger.error("IOError while writing to file %s: %s", path, e)
             raise e
         except GeneratorExit:
-            logger.info(f"Finished writing to {path}")
+            logger.info("Finished writing to %s", path)
 
     @staticmethod
     @coroutine
-    def clean_html_chunks():
+    def clean_html_chunks() -> Generator:
         output = NetworkOperationsPipe.write_to_file()
         parser = ChunkHTMLParser()
         path = yield
@@ -168,10 +173,10 @@ class NetworkOperationsPipe:
                 parsed_text = parser.get_data()
                 output.send(parsed_text)
         except UnicodeDecodeError as e:
-            logger.error(f"UnicodeDecodeError while parsing HTML: {e}")
+            logger.error("UnicodeDecodeError while parsing HTML: %s", e)
             raise e
         except GeneratorExit:
             logger.info("Html document has been parsed correctly")
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.error("Unexpected error: %s", e)
             raise e
