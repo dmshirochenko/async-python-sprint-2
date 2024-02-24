@@ -1,4 +1,12 @@
-# Async Python Sprint 2 Project
+# Task Scheduler Project
+
+## Project Overview
+
+The project involves designing and implementing a task scheduler capable of executing incoming tasks with various specifications and requirements. This scheduler is intended to manage tasks efficiently, ensuring high throughput and reliability even after system restarts.
+
+The service is schematically represented in the diagram below:
+![image](schema.png)
+
 
 ## Project Structure
 
@@ -20,6 +28,7 @@ Here is the overall structure of the project:
 - README.md # README file with project details
 - requirements.txt # List of dependencies to install
 
+
 ## Running the Application
 
 To run the application, follow these steps:
@@ -34,57 +43,29 @@ To run the application, follow these steps:
 5. Run the `main.py` script:
     python main.py
 
-# Проектное задание второго спринта
 
-Спроектировать и реализовать планировщик задач для выполнения поступающих задач.
+## Short Description
 
-## Описание задания
-
-**1. Описать реализацию класса `Scheduler`.**
-
-Условия и требования:
-- Планировщик одновременно может выполнять до 10 задач (дефолтное значение, может быть изменено).
-- Возможность добавить задачу в планировщик и запустить её в рамках ограничений планировщика и настроек, указанных в задаче.
-- При штатном завершении работы планировщик сохраняет статус выполняемых и ожидающих задач.
-- После рестарта восстанавливается последнее состояние и задачи продолжают выполняться.
-
-**2. Описать реализацию класса `Job`.**
-
-Условия и требования:
-- У задачи может быть указана длительность выполнения (опциональный параметр). Если параметр указан, то задача прекращает выполняться, если время выполнения превысило указанный параметр.
-- У задачи может быть указано время запуска (опциональный параметр). Если параметр указан, то задача стартует в указанный временной период.
-- У задачи может быть указан параметр количества рестартов (опциональный параметр). Если в ходе выполнения задачи произошёл сбой или задачи-зависимости не были выполнены, то задача будет перезапущена указанное количество раз. Если параметр не указан, то количество рестартов равно 0.
-- У задачи может быть указаны зависимости — задача или задачи, от которых зависит её выполнение (опциональный параметр). Если параметр указан, то задача не может стартовать до момента, пока не будут завершены задачи-зависимости.
+**Objective:** To create a `Scheduler` class and a `Job` class that together facilitate the scheduling and execution of tasks based on defined constraints and settings.
 
 
-**3. Проверить работу планировщика на различных задачах.**
+### Scheduler Class
 
-Условия и требования:
-- работа с файловой системой: создание, удаление, изменение директорий и файлов;
-- работа с файлами: создание, чтение, запись;
-- работа с сетью: обработка ссылок (GET-запросы) и анализ полученного результата;
-- описать конвеер выполнения основной задачи минимум из 3 задач, зависящих друг от друга и выполняющихся последовательно друг за другом.
+- **Concurrency Limit:** Can run up to 10 tasks simultaneously by default, adjustable as needed.
+- **Functionality:** Supports adding tasks and executing them within the scheduler's constraints and the task's specific settings.
+- **State Persistence:** Maintains the status of running and waiting tasks, ensuring that this state can be restored after a restart to continue task execution seamlessly.
 
-## Требования к решению
 
-1. Используйте корутины и генераторы, изученные в теоретической части.
-2. Использование потоков и процессов не запрещено.
-3. Использование `asyncio` запрещено.
-4. Используйте встроенные библиотеки и модули языка.
-5. Используйте концепции ООП.
-6. Используйте аннотацию типов.
-7. Логируйте результаты действий.
-8. Предусмотрите обработку исключительных ситуаций.
-9. Приведите стиль кода в соответствие pep8, flake8, mypy.
+### Job Class
 
-## Рекомендации к решению
+- **Execution Duration:** Optional parameter to specify the maximum allowed duration for task execution.
+- **Start Time:** Optional parameter to schedule a task to start at a specific time.
+- **Restart Count:** Optional parameter defining how many times a task should be restarted if it fails or if its dependencies are not met, with a default of 0 restarts if unspecified.
+- **Dependencies:** Optional parameter to specify other tasks that must be completed before this task can start.
 
-1. Покройте написанный код тестами.
-2. Для хранения статуса задач или планировщика используйте `.lock`-файлы и иные текстовые форматы — например, `txt` или `json`.
-3. Организуйте структуру хранения задач и/или их зависимостей в рамках отдельных директорий с определенным наименованием, используя `uid` или кастомный шаблон. Использование ссылок (`symlink`) не запрещено.
-4. Сигнатура описания классов может быть изменена под ваше усмотрение. Создавать дополнительные классы не запрещено.
-5. Используйте примитивы синхронизации, например, [Timer](https://docs.python.org/3/library/threading.html#timer-objects) или [Condition](https://docs.python.org/3/library/threading.html#condition-objects).
-6. По возможности, решение должно полностью строиться на использовании корутин.
+### Testing the Scheduler
 
-Схематично сервис представлен на [диаграмме](schema.png){target="_blank"}.
-![image](schema.png)
+- **File System Operations:** Includes creating, deleting, and modifying directories and files.
+- **File Operations:** Encompasses creating, reading, and writing files.
+- **Network Operations:** Involves handling URLs (GET requests) and analyzing the results.
+- **Task Pipeline:** Describes a sequence of at least three interdependent tasks executed in order.
